@@ -16,16 +16,26 @@ I built this method at work with an AI-powered API testing tool (RestFlow) and u
 
 **Step 1** is deterministic where it matters: scripts extract every request, assign each one to exactly one group and check that every endpoint appears in a prompt, so nothing is silently skipped.
 
-| Group | What it tests |
-| --- | --- |
-| A | Read-only chains: list → capture id → get by id |
-| B | Search/report endpoints and read chains between resources |
-| C | "Safe update" of shared reference data (needs developer approval) |
-| D | Self-contained CRUD flows that clean up after themselves |
-| E | Parent → child flows |
-| F | Core business workflows (needs domain review) |
-| N | Negative and security checks |
-| X | Not automated, with a reason (mail, cron, integrations…) |
+### Group codes
+
+Every request goes into exactly one group. **The letter is the type of test, ordered by risk. The number is the batch** inside that type.
+
+| Group | What it tests | Risk |
+| --- | --- | --- |
+| A1, A2… | Read-only chains: list → capture id → get by id (15–20 resources per batch) | None, no data is changed |
+| A3 | Single GETs that need no id chain (health check, version, lookups) | None |
+| B1 | Search/report endpoints called with an empty filter | None |
+| B2 | Read chains between resources (look up a value in one, use it in another) | None |
+| C | "Safe update" of shared reference data: write back the current values, then verify | Needs developer approval |
+| D1, D2… | Self-contained CRUD flows that create, update and delete their own record (4–6 resources per batch) | Medium, cleans up after itself |
+| E1, E2… | Parent → child flows: create the parent, test the child, delete both | Medium |
+| F1, F2… | Core business workflows (assign, approve, reject, status changes) | High, needs developer approval and domain review |
+| N1 | Negative and security checks: missing or invalid token, wrong credentials, unknown ids | Low |
+| X | Not automated, each with a reason (mail, cron, integrations, bulk import) | – |
+
+A large API produces many batches (on the enterprise project: A1–A3, B1–B2, D1–D6, F1–F5…). Restful-Booker has only 8 requests, so it needs just **A3, A1, D1 and N1**: there is no second read batch, and no search, reference-data, parent–child or business-workflow endpoints.
+
+**Run order:** A3 → A1 → D1 → N1. The health check goes first, so if the API is down, the reason for the red run is clear immediately. Then reads, then writes, then negative checks.
 
 **Rules built into every prompt** (learned on the real project): never hardcode hosts or tokens; capture ids from real responses and fix paths after the first run; never weaken an assertion to make a test pass; copy enum values from existing records instead of inventing them; mark test data with an `RFTEST` prefix; delete everything a test creates and verify the delete.
 
