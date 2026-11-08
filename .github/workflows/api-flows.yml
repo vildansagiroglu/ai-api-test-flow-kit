@@ -1,0 +1,37 @@
+name: API test flows
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1"   # every Monday
+  workflow_dispatch:
+
+jobs:
+  newman:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Newman
+        run: npm install -g newman newman-reporter-htmlextra
+
+      - name: Run test flows
+        run: >
+          newman run output/BOOKER_API_Test_Flows.postman_collection.json
+          --bail
+          --reporters cli,junit,htmlextra
+          --reporter-junit-export results/junit.xml
+          --reporter-htmlextra-export results/report.html
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-report
+          path: results

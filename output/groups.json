@@ -1,0 +1,24 @@
+{
+  "A1": [
+    "GET /booking",
+    "GET /booking/:id"
+  ],
+  "A3": [
+    "GET /ping"
+  ],
+  "D1": [
+    "POST /auth",
+    "POST /booking",
+    "PUT /booking/:id",
+    "PATCH /booking/:id",
+    "DELETE /booking/:id"
+  ],
+  "X": [],
+  "N1": [
+    "POST /auth",
+    "PUT /booking/:id",
+    "PATCH /booking/:id",
+    "DELETE /booking/:id",
+    "GET /booking/:id"
+  ]
+}
